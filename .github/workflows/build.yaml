@@ -1,0 +1,56 @@
+name: Build GNU Stow AppImage
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install FUSE
+        run: |
+          sudo apt update
+          sudo apt install --yes fuse
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Perl
+        run: |
+          curl -fsSL -o perl-linux-amd64.tar.xz https://github.com/skaji/relocatable-perl/releases/latest/download/perl-linux-amd64.tar.xz
+          tar xJf perl-linux-amd64.tar.xz
+          mv perl-linux-amd64 ./AppDir/
+          ./AppDir/perl-linux-amd64/bin/perl --version
+
+      - name: Install GNU Stow
+        run: |
+          curl -fsSL -o stow-2.4.1.tar.gz https://ftp.gnu.org/gnu/stow/stow-2.4.1.tar.gz
+          tar xzf stow-2.4.1.tar.gz
+
+          prefix_dir="$(pwd)/AppDir/perl-linux-amd64"
+
+          cd stow-2.4.1
+          ./configure --prefix="$prefix_dir"
+          make
+          make install
+          cd ..
+
+          ./AppDir/perl-linux-amd64/bin/stow --version
+
+      - name: Build AppImage
+        run: |
+          curl -fsSL -o appimage-builder-x86_64.AppImage https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
+          chmod +x appimage-builder-x86_64.AppImage
+          ./appimage-builder-x86_64.AppImage --recipe recipe.yaml
+          chmod +x stow-2.4.1-x86_64.AppImage
+          ./stow-2.4.1-x86_64.AppImage --version
+
+      - name: Upload AppImage to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: stow-2.4.1-x86_64.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

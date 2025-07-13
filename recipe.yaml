@@ -1,0 +1,17 @@
+version: 1
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: org.gnu.stow
+    name: stow
+    icon: link
+    version: 2.4.1
+    exec: perl-linux-amd64/bin/perl
+    exec_args: "$APPDIR/perl-linux-amd64/bin/stow $@"
+
+AppImage:
+  update-information: None
+  sign-key: None
+  arch: x86_64
